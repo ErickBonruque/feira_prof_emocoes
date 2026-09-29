@@ -5,7 +5,7 @@
 # =====================================================================
 
 camera:
-  index: 0                # WSL: câmera /dev/videoN (0 = primeira). Tecla C troca durante o jogo.
+  index: 0                # Linux: câmera /dev/videoN (0 = primeira). Tecla C troca durante o jogo.
                           # Windows: ignorado; a câmera é escolhida por usb_hardware_id (abaixo).
   width: 1280
   height: 720
@@ -14,12 +14,12 @@ camera:
   mirror: true            # espelha a imagem (modo selfie)
   reconnect_interval: 2.0 # segundos entre tentativas de reconectar
   frame_timeout: 2.0      # sem frame novo por esse tempo = câmera caiu, reconecta
-  # Webcam repassada do Windows para o WSL via usbipd (ver README).
-  # Use "usbipd list" no Windows para descobrir o VID:PID da sua câmera.
+  # Windows: câmeras aceitas pelo jogo, pelo VID:PID. Descubra o da sua com --list-cameras
+  # (ver docs/WEBCAM.md). "" = usa o camera.index.
   # Pode listar várias, separadas por vírgula: usa a primeira que estiver conectada.
   # Logitech C920 = 046d:082d, WEMISS CM-A1 = 1bcf:28c4 (a integrada do notebook é 5986:211b)
-  # No Windows nativo vale a mesma lista: o jogo só usa câmeras dela (nunca a integrada),
-  # achando cada uma pelo VID:PID mesmo que o índice mude. Tecla C alterna entre as da lista.
+  # O jogo só usa câmeras da lista (nunca a integrada), achando cada uma pelo VID:PID mesmo
+  # que o índice mude. Tecla C alterna entre as da lista.
   usb_hardware_id: "046d:082d, 1bcf:28c4"
   exposure: auto          # Windows: auto, ou fixa (ex.: -6 = 1/64 s) se o local for escuro e o FPS cair
 

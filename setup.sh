@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # JOGO DAS CARETAS - preparação (a ÚNICA etapa que precisa de internet).
 # Cria o ambiente Python, instala as dependências fixadas, baixa modelos e fontes,
-# cria o atalho do Windows e roda os testes. Pode rodar de novo quantas vezes quiser.
+# cria o atalho (no WSL) e roda os testes. Pode rodar de novo quantas vezes quiser.
 set -euo pipefail
 cd "$(dirname "$(readlink -f "$0")")"
 ROOT=$(pwd)
@@ -23,7 +23,12 @@ echo "== 2/5 Dependências (versões fixadas em requirements.txt)"
 echo "== 3/5 Modelos e fontes (com conferência de SHA-256)"
 .venv/bin/python scripts/download_assets.py
 
-echo "== 4/5 Atalho para o Windows (start.bat)"
+echo "== 4/5 Atalho"
+IS_WSL=""
+grep -qi microsoft /proc/version 2>/dev/null && IS_WSL=1
+if [ -z "$IS_WSL" ]; then
+    echo "   (Linux: sem atalho; para jogar use ./start.sh)"
+else
 DISTRO="${WSL_DISTRO_NAME:-Ubuntu}"
 cat > start.bat <<EOF
 @echo off
@@ -45,12 +50,15 @@ if command -v powershell.exe > /dev/null; then
         cp start.bat "$WIN_DESKTOP/Jogo das Caretas.bat" && echo "   atalho criado em: $DESKTOP\\Jogo das Caretas.bat"
     fi
 fi
+fi
 
 echo "== 5/5 Testes e verificação"
 .venv/bin/python -m pytest -q
 .venv/bin/python -m caretas --check || true
 
 echo
-echo "Setup concluído. Se a câmera ainda não foi configurada no WSL (uma vez só):"
-echo "   ./scripts/camera_wsl.sh setup && ./scripts/camera_wsl.sh bind"
-echo "Para jogar: ./start.sh   (ou duplo clique em 'Jogo das Caretas' na Área de Trabalho)"
+echo "Setup concluído. Para jogar: ./start.sh"
+echo "Se a câmera não for encontrada: .venv/bin/python -m caretas --list-cameras (ver docs/WEBCAM.md)"
+if [ -n "$IS_WSL" ]; then
+    echo "WSL: configure a câmera uma vez com ./scripts/camera_wsl.sh setup && ./scripts/camera_wsl.sh bind"
+fi

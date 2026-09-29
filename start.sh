@@ -13,8 +13,8 @@ if [ ! -x .venv/bin/python ]; then
     exit 1
 fi
 
-# Webcam do Windows -> WSL (usbipd). Se falhar, o jogo abre mesmo assim e fica tentando reconectar.
-if [[ " $* " != *" --video "* ]] && [ -z "${CARETAS_SKIP_CAMERA:-}" ]; then
+# Só no WSL: repassa a webcam do Windows (usbipd). Se falhar, o jogo abre mesmo assim e fica tentando.
+if grep -qi microsoft /proc/version 2>/dev/null && [[ " $* " != *" --video "* ]] && [ -z "${CARETAS_SKIP_CAMERA:-}" ]; then
     ./scripts/camera_wsl.sh attach || echo "[aviso] câmera não conectada ainda; o jogo vai continuar tentando."
 fi
 

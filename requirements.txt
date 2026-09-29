@@ -1,4 +1,4 @@
-# Dependências do Jogo das Caretas (versões fixadas; testado em WSL2 Ubuntu 24.04, Python 3.12)
+# Dependências do Jogo das Caretas (versões fixadas; testado em Ubuntu 24.04 e Windows 11, Python 3.12)
 numpy==2.5.3
 opencv-python-headless==4.14.0.94
 pygame-ce==2.5.8

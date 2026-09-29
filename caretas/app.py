@@ -267,6 +267,15 @@ def _list_cameras_windows(cfg: Config) -> int:
     return 0 if ok else 1
 
 
+def _no_video_hint() -> str:
+    try:
+        with open("/proc/version", encoding="utf-8") as f:
+            wsl = "microsoft" in f.read().lower()
+    except OSError:
+        wsl = False
+    return "rode ./scripts/camera_wsl.sh attach" if wsl else "webcam não detectada, ver docs/WEBCAM.md"
+
+
 def list_cameras(cfg: Config) -> int:
     import cv2
 
@@ -274,7 +283,7 @@ def list_cameras(cfg: Config) -> int:
         return _list_cameras_windows(cfg)
     if platform.system() == "Linux":
         devs = sorted(glob.glob("/dev/video*"))
-        print("dispositivos:", ", ".join(devs) if devs else "nenhum /dev/video* (webcam não repassada ao WSL?)")
+        print("dispositivos:", ", ".join(devs) if devs else f"nenhum /dev/video* ({_no_video_hint()})")
         indices = [int(d.replace("/dev/video", "")) for d in devs if d[10:].isdigit()]
         backend = cv2.CAP_V4L2
     else:
@@ -350,7 +359,7 @@ def self_check(cfg: Config, args) -> int:
         if cap is None:
             hint = ""
             if platform.system() == "Linux" and not glob.glob("/dev/video*"):
-                hint = "nenhum /dev/video*: rode ./scripts/camera_wsl.sh attach (ver README)"
+                hint = f"nenhum /dev/video*: {_no_video_hint()}"
             report(False, cam.source_label, hint or cam._open_error or "não abriu")
         else:
             n, t = 0, time.perf_counter()
@@ -367,6 +376,6 @@ def self_check(cfg: Config, args) -> int:
 
     if platform.system() == "Linux":
         has_display = bool(os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))
-        report(has_display, "tela gráfica (WSLg)", os.environ.get("DISPLAY", "") or "sem DISPLAY")
-    print("\nTUDO PRONTO!\n" if ok_all else "\nHÁ PROBLEMAS - veja a seção 'Problemas comuns' do README.\n")
+        report(has_display, "tela gráfica", os.environ.get("DISPLAY", "") or "sem DISPLAY")
+    print("\nTUDO PRONTO!\n" if ok_all else "\nHÁ PROBLEMAS - veja docs/PROBLEMAS.md e docs/WEBCAM.md.\n")
     return 0 if ok_all else 1

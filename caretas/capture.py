@@ -1,7 +1,7 @@
 """Captura da câmera em uma thread própria, com reconexão automática.
 
 Mantém só o quadro mais recente em memória (nada é gravado em disco).
-Se a câmera cair (cabo, usbipd, driver), fecha e tenta abrir de novo a cada
+Se a câmera cair (cabo, driver), fecha e tenta abrir de novo a cada
 `reconnect_interval` segundos, sem travar o resto do jogo.
 
 No Windows (DirectShow), a câmera é escolhida pelo VID:PID de `camera.usb_hardware_id`
