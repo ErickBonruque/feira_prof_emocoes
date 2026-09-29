@@ -5,7 +5,8 @@
 # =====================================================================
 
 camera:
-  index: 0                # câmera /dev/videoN (0 = primeira). Tecla C troca durante o jogo.
+  index: 0                # WSL: câmera /dev/videoN (0 = primeira). Tecla C troca durante o jogo.
+                          # Windows: ignorado; a câmera é escolhida por usb_hardware_id (abaixo).
   width: 1280
   height: 720
   fps: 30
@@ -17,7 +18,10 @@ camera:
   # Use "usbipd list" no Windows para descobrir o VID:PID da sua câmera.
   # Pode listar várias, separadas por vírgula: usa a primeira que estiver conectada.
   # Logitech C920 = 046d:082d, WEMISS CM-A1 = 1bcf:28c4 (a integrada do notebook é 5986:211b)
+  # No Windows nativo vale a mesma lista: o jogo só usa câmeras dela (nunca a integrada),
+  # achando cada uma pelo VID:PID mesmo que o índice mude. Tecla C alterna entre as da lista.
   usb_hardware_id: "046d:082d, 1bcf:28c4"
+  exposure: auto          # Windows: auto, ou fixa (ex.: -6 = 1/64 s) se o local for escuro e o FPS cair
 
 detector:
   model: models/face_detection_yunet_2023mar.onnx

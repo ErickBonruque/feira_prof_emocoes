@@ -32,6 +32,7 @@ class CameraConfig:
     reconnect_interval: float = 2.0
     frame_timeout: float = 2.0
     usb_hardware_id: str = ""
+    exposure: str = "auto"
 
 
 @dataclass
@@ -187,6 +188,9 @@ def _validate(cfg: Config) -> None:
         raise ConfigError("rules.hold_frames >= 1 e rules.hold_seconds >= 0")
     if not 0.0 <= cfg.audio.volume <= 1.0:
         raise ConfigError("audio.volume deve estar entre 0 e 1")
+    exposure = cfg.camera.exposure
+    if isinstance(exposure, bool) or not (isinstance(exposure, (int, float)) or str(exposure).strip().lower() == "auto"):
+        raise ConfigError("camera.exposure deve ser auto ou um número (ex.: -6)")
     if cfg.game.report_timeout < 0:
         raise ConfigError("game.report_timeout deve ser >= 0 (0 = só pelo botão)")
 

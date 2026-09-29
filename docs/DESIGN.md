@@ -1,6 +1,6 @@
 # Sistema visual: Jogo das Caretas
 
-Adaptado do DESIGN.md "The Verge" (coleção [awesome-claude-design](https://github.com/VoltAgent/awesome-claude-design)). Instalado com `npx getdesign@latest add theverge` e reinterpretado para **projetor + crianças + foto de celular**. Os tokens estão implementados em `caretas/ui/theme.py`.
+Adaptado do DESIGN.md "The Verge" (coleção [getdesign.md](https://getdesign.md)). Instalado com `npx getdesign@latest add theverge` e reinterpretado para **projetor + crianças + foto de celular**. Os tokens estão implementados em `caretas/ui/theme.py`.
 
 ## Por que este estilo
 

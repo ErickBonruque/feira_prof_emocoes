@@ -12,12 +12,99 @@ A mensagem da demonstração: **a IA faz o relatório; quem decide é sempre uma
 
 ---
 
+## Guia rápido: rodar no seu computador
+
+Se você recebeu este link e só quer jogar, siga esta parte. O resto do README é detalhe técnico e o roteiro do evento.
+
+**Precisa de:** Windows 10 ou 11 (64 bits), uma webcam (a do notebook serve), internet só na instalação (~1,5 GB) e cerca de 3 GB livres. Placa NVIDIA é opcional: sem ela o jogo roda na CPU.
+
+1. **Instale o Python 3.12** (se ainda não tiver). No PowerShell ou no Prompt de Comando:
+
+   ```bat
+   winget install Python.Python.3.12
+   ```
+
+   Ou baixe em [python.org](https://www.python.org/downloads/) a versão **3.12**. Outras versões (3.13, 3.11) não servem: as dependências foram fixadas e testadas na 3.12.
+
+2. **Baixe o projeto.** Com o Git:
+
+   ```bat
+   git clone https://github.com/ErickBonruque/feira_prof_emocoes.git
+   cd feira_prof_emocoes
+   ```
+
+   Sem o Git: botão verde **Code → Download ZIP** aqui no GitHub e extraia numa pasta **sem acentos nem espaços no caminho** (ex.: `C:\jogos\feira_prof_emocoes`).
+
+3. **Instale:** duplo clique em **`setup_windows.bat`**. Ele cria um ambiente isolado (`.venv`), baixa tudo, roda os testes e cria o atalho **"Jogo das Caretas (Windows)"** na Área de Trabalho. No fim aparece o resultado do `--check`: se só a linha da câmera falhar, siga o passo 4.
+
+4. **Configure a webcam** (a parte que mais dá problema). Veja [Webcam: fazer funcionar no seu PC](#webcam-fazer-funcionar-no-seu-pc) logo abaixo.
+
+5. **Jogue:** duplo clique no atalho (ou em `start_windows.bat`). **Q** ou **Esc** duas vezes para sair.
+
+### Webcam: fazer funcionar no seu PC
+
+Por padrão, o `config.yaml` só aceita as duas webcams usadas no evento (Logitech C920 e WEMISS), para o jogo nunca abrir a câmera errada do notebook durante a feira. **No seu PC, provavelmente a sua câmera não está nessa lista**, e o jogo vai mostrar "CÂMERA DESCONECTADA" ou `nenhuma câmera da lista conectada`. Para resolver:
+
+**1. Veja quais câmeras o jogo enxerga:**
+
+```bat
+start_windows.bat --list-cameras
+```
+
+A saída é parecida com esta:
+
+```
+câmeras do DirectShow (lista do config: 046d:082d, 1bcf:28c4):
+  [0] Integrated Camera  5986:211b  -> fora da lista, ignorada
+  [1] OBS Virtual Camera  (sem VID:PID)  -> fora da lista, ignorada
+  nenhuma câmera da lista conectada
+```
+
+O número entre colchetes é o **índice** e o `xxxx:xxxx` é o **VID:PID** (a "identidade" da câmera).
+
+**2. Escolha uma das duas formas:**
+
+- **Jeito fixo (recomendado):** abra o `config.yaml` no Bloco de Notas e troque a linha `usb_hardware_id` pelo VID:PID da sua câmera:
+
+  ```yaml
+    usb_hardware_id: "5986:211b"
+  ```
+
+  Assim o jogo acha a câmera mesmo que o Windows mude a numeração. Dá para listar várias, separadas por vírgula (usa a primeira conectada; a tecla **C** alterna entre elas).
+
+- **Jeito rápido:** use o índice direto, sem editar nada:
+
+  ```bat
+  start_windows.bat --camera 0
+  ```
+
+  Ou apague o conteúdo da lista (`usb_hardware_id: ""`) para o jogo usar sempre o `camera.index` do `config.yaml`. Se a câmera não tiver VID:PID (câmeras virtuais, algumas integradas), este é o único jeito.
+
+**3. Confira:** `start_windows.bat --check`. A linha da câmera deve aparecer como `[OK]` com a resolução e o FPS.
+
+**Se ainda não funcionar:**
+
+| Sintoma | O que fazer |
+|---|---|
+| Nenhuma câmera aparece na lista | Veja se ela aparece no app **Câmera** do Windows. Se não aparecer lá, é driver, cabo ou porta USB. Em notebooks, confira a tecla de desligar a câmera (ícone de câmera riscada, geralmente em F8/F10) ou a tampinha física. |
+| A câmera aparece, mas "não entrega imagem" / tela preta | **Configurações → Privacidade e segurança → Câmera**: ligue **"Acesso à câmera"** e **"Permitir que aplicativos da área de trabalho acessem a câmera"**. Sem isso o Windows entrega só quadros pretos. |
+| Funcionava e parou / "câmera em uso" | Feche Teams, Zoom, Discord, OBS, o app Câmera e abas do navegador em videochamada: só um programa pode usar a webcam por vez. |
+| Imagem muito escura ou jogo lento (FPS baixo, tecla **D** mostra) | Ilumine o rosto de frente. Se continuar, no `config.yaml` troque `exposure: auto` por `exposure: -6`. |
+| Imagem esticada, cortada ou com cores estranhas | Algumas webcams não suportam MJPG ou 1280x720. No `config.yaml`, teste `fourcc: ""` e/ou `width: 640` e `height: 480`. |
+| O jogo pegou a câmera errada | Use o VID:PID da câmera certa em `usb_hardware_id` (passo 2), ou aperte **C** durante o jogo. |
+
+Quando pedir ajuda, mande a saída de `start_windows.bat --list-cameras` e `start_windows.bat --check`: com ela dá para saber o que está errado.
+
+---
+
 ## Sumário
 
+0. [Guia rápido: rodar no seu computador](#guia-rápido-rodar-no-seu-computador)
 1. [Como funciona](#como-funciona)
 2. [Requisitos](#requisitos)
 3. [Instalação passo a passo](#instalação-passo-a-passo)
 4. [Como rodar](#como-rodar)
+   - [Windows nativo (sem WSL)](#windows-nativo-sem-wsl)
 5. [Controles do teclado](#controles-do-teclado)
 6. [Como calibrar os limiares](#como-calibrar-os-limiares)
 7. [Checklist para o dia do evento](#checklist-para-o-dia-do-evento)
@@ -97,7 +184,7 @@ Os testes automáticos (`tests/test_game.py`) garantem pelo menos estes casos:
 | Emoção | **HSEmotion `enet_b0_8_va_mtl`** (ONNX, AffectNet) | Dá 8 classes **mais valência e excitação** em uma única inferência, o que permite exigir intensidade, e não só a classe. São 16 MB, com cerca de 4 a 6 ms por rosto na RTX 3050 e cerca de 8 ms na CPU. |
 | Execução | **ONNX Runtime GPU (CUDA 13)** com fallback automático para CPU | CUDA e cuDNN vêm como pacotes pip dentro do `.venv`, sem instalar nada no sistema. Se a GPU falhar ou ficar lenta, o jogo passa para a CPU sozinho. |
 | Interface | **Pygame (pygame-ce)** em tela cheia | É um processo só: não precisa de navegador, servidor ou permissão de câmera de browser. Tem a menor latência (câmera → tela direto) e mede 59 a 60 FPS no WSLg. |
-| Visual | Inspirado no DESIGN.md "The Verge" ([awesome-claude-design](https://github.com/VoltAgent/awesome-claude-design)) | Fundo quase preto (a câmera "salta"), neon menta e ultravioleta, blocos de cor saturada e letras gigantes. É chamativo para foto e legível no projetor. Detalhes em [docs/DESIGN.md](docs/DESIGN.md). |
+| Visual | Inspirado no DESIGN.md "The Verge" ([getdesign.md](https://getdesign.md)) | Fundo quase preto (a câmera "salta"), neon menta e ultravioleta, blocos de cor saturada e letras gigantes. É chamativo para foto e legível no projetor. Detalhes em [docs/DESIGN.md](docs/DESIGN.md). |
 | Plataforma | **WSL2 (Ubuntu 24.04) + WSLg** | Mesmo ambiente do laboratório. A webcam é repassada do Windows com o `usbipd-win`. |
 
 ---
@@ -184,6 +271,35 @@ O `start.sh`:
 1. conecta a webcam, com reconexão automática pelo `usbipd --auto-attach`;
 2. abre o jogo;
 3. **reabre o jogo sozinho** se ele fechar por erro. Para sair de vez, use Q/Esc duas vezes.
+
+### Windows nativo (sem WSL)
+
+O mesmo jogo roda direto no Windows, lendo a webcam pelo DirectShow. É o caminho recomendado para a C920: no WSL o `usbipd` perde pacotes do vídeo (a C920 só transmite por USB isócrono), e a imagem chega com quebras e a 10-15 FPS. No Windows: **1280x720 MJPG a 30 FPS, 0 quadros corrompidos** (medido: 1801 quadros em 60 s). O caminho do WSL (`setup.sh`, `start.sh`, `camera_wsl.sh`) continua funcionando; os dois podem conviver na mesma pasta ou em pastas diferentes.
+
+**Setup (com internet, uma vez):** duplo clique em `setup_windows.bat`, ou no terminal:
+
+```bat
+cd caminho\para\feira_prof_emocoes
+setup_windows.bat
+```
+
+Ele acha um Python 3.12 (lançador `py`, Miniconda ou python.org), cria o `.venv` (sem mexer no Python do sistema nem no `base` do conda), instala as mesmas versões fixadas do `requirements.txt` (inclusive `onnxruntime-gpu` com CUDA/cuDNN em pacotes pip), baixa os modelos conferindo o SHA-256, roda os testes e o `--check`, e cria o atalho **"Jogo das Caretas (Windows)"** na Área de Trabalho.
+
+**Jogar:** duplo clique no atalho, ou `start_windows.bat` (aceita as mesmas opções: `--debug`, `--windowed`, `--check`). Como o `start.sh`, ele reabre o jogo sozinho se cair; Q/Esc duas vezes sai.
+
+**Câmera:** o jogo usa **só** as câmeras de `camera.usb_hardware_id` (C920 e WEMISS), na ordem da lista, achando cada uma pelo VID:PID do caminho do dispositivo. Os índices do Windows mudam quando uma câmera é tirada e recolocada, por isso a escolha é refeita a cada reconexão. A integrada do notebook e câmeras virtuais (OBS) nunca são usadas. A tecla **C** alterna entre as câmeras da lista que estiverem conectadas. Para ver o que o jogo encontra:
+
+```bat
+.venv\Scripts\python.exe -m caretas --list-cameras
+```
+
+Detalhes técnicos que já estão resolvidos no código (`caretas/capture.py`):
+
+- **Backend DirectShow.** O Media Foundation (MSMF) travou por minutos ao abrir a C920 nesta máquina.
+- **Ordem da negociação.** No DirectShow, o MJPG só vale se for pedido *depois* da largura e da altura, e pedir o FPS depois disso volta para YUY2. A C920 em YUY2 a 1280x720 só dá **10 FPS**: era essa a causa dos 10 FPS medidos no começo, e não a luz.
+- **Exposição.** `camera.exposure: auto` (padrão) religa a exposição automática sempre que abre a câmera. Se no local escuro o FPS cair (tecla D mostra), use um valor fixo como `-6` (1/64 s) e ilumine o rosto.
+
+Não é preciso `usbipd unbind`: com a câmera "Shared" mas não conectada ao WSL, o Windows a usa normalmente. Só não rode o jogo no WSL e no Windows ao mesmo tempo, porque os dois disputariam a câmera.
 
 ---
 
@@ -295,6 +411,8 @@ Faça a calibração **no local, com a luz do evento**, antes de abrir para o p�
 
 ### A câmera não abre ("CÂMERA DESCONECTADA")
 
+**No Windows nativo:** veja [Webcam: fazer funcionar no seu PC](#webcam-fazer-funcionar-no-seu-pc). Os itens abaixo são do caminho WSL.
+
 1. Rode `./scripts/camera_wsl.sh status`:
    - **câmera não aparece no Windows** → cabo ou porta USB. Veja `usbipd list` no Windows.
    - **Not shared** → `./scripts/camera_wsl.sh bind` (uma vez, como Administrador).
@@ -364,6 +482,8 @@ Faça a calibração **no local, com a luz do evento**, antes de abrir para o p�
 
 ```
 feira_prof_emocoes/
+├── setup_windows.bat     # setup do Windows nativo: .venv + deps + modelos + atalho + testes
+├── start_windows.bat     # inicia o jogo no Windows nativo (reabre se cair)
 ├── start.sh              # inicia o jogo (reconecta câmera, reabre se cair)
 ├── start.bat             # atalho do Windows (gerado pelo setup; cópia na Área de Trabalho)
 ├── setup.sh              # setup com internet: .venv + deps + modelos + atalho + testes
@@ -379,6 +499,7 @@ feira_prof_emocoes/
 │   ├── app.py            # laço principal, teclado, verificação (--check)
 │   ├── config.py         # lê e valida o config.yaml
 │   ├── capture.py        # câmera em thread + reconexão
+│   ├── win_camera.py     # Windows: acha a câmera pelo VID:PID no DirectShow (só ctypes)
 │   ├── detection.py      # YuNet + escolha/travamento do jogador
 │   ├── emotion.py        # HSEmotion (ONNX Runtime GPU/CPU), recorte e alinhamento
 │   ├── scoring.py        # suavização, calibração neutra, 4 condições, tempo mínimo
@@ -400,4 +521,4 @@ feira_prof_emocoes/
 - **YuNet** (detecção de rosto): [OpenCV Zoo](https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet), licença MIT.
 - **HSEmotion** (emoção + valência/excitação): A. Savchenko, [face-emotion-recognition](https://github.com/av-savchenko/face-emotion-recognition), código sob Apache-2.0. O modelo foi treinado na AffectNet, cuja licença é de uso acadêmico e não comercial, o que é adequado para esta demonstração educativa.
 - **Fontes**: Anton, Space Grotesk e Space Mono, todas sob SIL Open Font License. As licenças estão em `assets/fonts/`.
-- **Inspiração visual**: DESIGN.md "The Verge" da coleção [awesome-claude-design](https://github.com/VoltAgent/awesome-claude-design) / getdesign.md. É uma análise independente, sem afiliação com a marca; nenhum logo ou nome da marca é usado no jogo.
+- **Inspiração visual**: DESIGN.md "The Verge" da coleção [getdesign.md](https://getdesign.md). É uma análise independente, sem afiliação com a marca; nenhum logo ou nome da marca é usado no jogo.

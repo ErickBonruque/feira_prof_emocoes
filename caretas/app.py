@@ -44,6 +44,7 @@ def run(args) -> int:
         return 2
     if args.camera is not None:
         cfg.camera.index = args.camera
+        cfg.camera.usb_hardware_id = ""  # índice explícito: não escolhe pelo VID:PID (Windows)
     if args.windowed:
         cfg.ui.fullscreen = False
     if cfg.privacy.block_network:
@@ -52,7 +53,7 @@ def run(args) -> int:
     if args.check:
         return self_check(cfg, args)
     if args.list_cameras:
-        return list_cameras()
+        return list_cameras(cfg)
 
     os.environ.setdefault("PYGAME_HIDE_SUPPORT_PROMPT", "1")
     import pygame
@@ -68,6 +69,8 @@ def run(args) -> int:
     from .ui.sound import SoundBoard
 
     warnings.filterwarnings("ignore", message="Requested window was forcibly resized")
+    if platform.system() == "Windows":
+        _windows_dpi_aware()
     if cfg.audio.enabled:
         pygame.mixer.pre_init(44100, -16, 2, 512)
     pygame.init()
@@ -140,7 +143,7 @@ def run(args) -> int:
                     elif k in (pygame.K_d, pygame.K_F1):
                         show_debug = not show_debug
                     elif k == pygame.K_c and not args.video:
-                        camera.switch((camera.index + 1) % 4)
+                        camera.next_camera()
                         game.reset(time.monotonic(), "camera_switch")
                 elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1 and game.phase == Phase.REPORT:
                     # Os botões do relatório também funcionam com o mouse.
@@ -216,9 +219,59 @@ def _sha256(path) -> str:
     return h.hexdigest()
 
 
-def list_cameras() -> int:
+def _windows_dpi_aware() -> None:
+    """Sem isto, com escala de 125/150% o Windows amplia a janela e a tela cheia sai borrada/cortada."""
+    import ctypes
+
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)  # por monitor
+    except Exception:  # noqa: BLE001 - versões antigas do Windows
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:  # noqa: BLE001
+            pass
+
+
+def _list_cameras_windows(cfg: Config) -> int:
     import cv2
 
+    from .win_camera import allowed_devices, list_devices, parse_hardware_ids
+
+    hwids = parse_hardware_ids(cfg.camera.usb_hardware_id)
+    devices = list_devices()
+    # Lista vazia = usa o índice fixo (camera.index ou --camera N)
+    allowed = allowed_devices(devices, hwids) if hwids else [d for d in devices if d.index == cfg.camera.index]
+    print(f"câmeras do DirectShow (lista do config: {', '.join(hwids) or f'vazia, usa o índice {cfg.camera.index}'}):")
+    for d in devices:
+        if d in allowed:
+            tag = "USADA PELO JOGO" if d == allowed[0] else f"reserva {allowed.index(d)}"
+        else:
+            tag = "fora da lista, ignorada" if hwids else "não usada"
+        print(f"  [{d.index}] {d.name}  {d.hwid or '(sem VID:PID)'}  -> {tag}")
+    if not allowed:
+        print("  nenhuma câmera da lista conectada" if hwids else f"  nenhuma câmera no índice {cfg.camera.index}")
+        print('  dica: coloque o VID:PID da sua câmera em camera.usb_hardware_id no config.yaml,')
+        print('        ou rode com --camera N usando o número entre colchetes acima')
+        return 1
+    # Confere só a escolhida (as fora da lista, como a integrada, nem são abertas). Nada é salvo.
+    from .capture import Camera
+
+    cam = Camera(cfg.camera)
+    cap = cam._open()
+    ok, frame = cap.read() if cap is not None else (False, None)
+    fcc = int(cap.get(cv2.CAP_PROP_FOURCC)).to_bytes(4, "little").decode("ascii", "replace") if cap else "?"
+    print(f"  {cam.source_label}: {'OK ' + str(frame.shape[1]) + 'x' + str(frame.shape[0]) + ' ' + fcc if ok else 'não entrega imagem'}")
+    if cap is not None:
+        cap.release()
+    del frame
+    return 0 if ok else 1
+
+
+def list_cameras(cfg: Config) -> int:
+    import cv2
+
+    if platform.system() == "Windows":
+        return _list_cameras_windows(cfg)
     if platform.system() == "Linux":
         devs = sorted(glob.glob("/dev/video*"))
         print("dispositivos:", ", ".join(devs) if devs else "nenhum /dev/video* (webcam não repassada ao WSL?)")
@@ -298,7 +351,7 @@ def self_check(cfg: Config, args) -> int:
             hint = ""
             if platform.system() == "Linux" and not glob.glob("/dev/video*"):
                 hint = "nenhum /dev/video*: rode ./scripts/camera_wsl.sh attach (ver README)"
-            report(False, f"câmera {cfg.camera.index}", hint or "não abriu")
+            report(False, cam.source_label, hint or cam._open_error or "não abriu")
         else:
             n, t = 0, time.perf_counter()
             frame = None
@@ -307,7 +360,8 @@ def self_check(cfg: Config, args) -> int:
                 n += int(bool(okf))
             fps = n / max(1e-6, time.perf_counter() - t)
             shape = f"{frame.shape[1]}x{frame.shape[0]}" if frame is not None else "?"
-            report(n > 0, f"câmera {cfg.camera.index}", f"{shape} ~{fps:.0f} FPS")
+            fcc = int(cap.get(cv2.CAP_PROP_FOURCC)).to_bytes(4, "little").decode("ascii", "replace").strip()
+            report(n > 0, cam.source_label, f"{shape} {fcc} ~{fps:.0f} FPS")
             cap.release()
             del frame
 
