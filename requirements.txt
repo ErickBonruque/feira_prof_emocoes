@@ -1,0 +1,19 @@
+# Dependências do Jogo das Caretas (versões fixadas; testado em WSL2 Ubuntu 24.04, Python 3.12)
+numpy==2.5.3
+opencv-python-headless==4.14.0.94
+pygame-ce==2.5.8
+PyYAML==6.0.3
+# ONNX Runtime com GPU (CUDA 13). Os extras trazem CUDA/cuDNN como pacotes pip:
+# nada é instalado no sistema. Sem GPU, o jogo usa a CPU automaticamente.
+onnxruntime-gpu[cuda,cudnn]==1.30.0
+# dependências transitivas fixadas para instalações reproduzíveis
+flatbuffers==25.12.19
+packaging==26.3
+protobuf==7.36.2
+nvidia-cublas==13.8.0.4
+nvidia-cuda-nvrtc==13.4.92
+nvidia-cuda-runtime==13.4.92
+nvidia-cudnn-cu13==9.26.0.51
+nvidia-cufft==12.4.0.43
+nvidia-curand==10.4.4.72
+nvidia-nvjitlink==13.4.92

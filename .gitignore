@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+# modelos e fontes são baixados pelo setup (ver caretas/manifest.py)
+models/*.onnx
+assets/fonts/*.ttf
+# privacidade: nunca versionar imagens/vídeos
+*.png
+*.jpg
+*.jpeg
+*.mp4
+*.avi
+# atalho gerado pelo setup.sh com o caminho desta máquina
+start.bat

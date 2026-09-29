@@ -1,0 +1,108 @@
+# =====================================================================
+#  JOGO DAS CARETAS - configuração
+#  Edite à vontade: o jogo lê este arquivo toda vez que é iniciado.
+#  Qualquer chave apagada volta ao valor padrão definido em caretas/config.py.
+# =====================================================================
+
+camera:
+  index: 0                # câmera /dev/videoN (0 = primeira). Tecla C troca durante o jogo.
+  width: 1280
+  height: 720
+  fps: 30
+  fourcc: MJPG            # MJPG dá mais FPS na maioria das webcams USB. "" = padrão da câmera
+  mirror: true            # espelha a imagem (modo selfie)
+  reconnect_interval: 2.0 # segundos entre tentativas de reconectar
+  frame_timeout: 2.0      # sem frame novo por esse tempo = câmera caiu, reconecta
+  # Webcam repassada do Windows para o WSL via usbipd (ver README).
+  # Use "usbipd list" no Windows para descobrir o VID:PID da sua câmera.
+  # Pode listar várias, separadas por vírgula: usa a primeira que estiver conectada.
+  # Logitech C920 = 046d:082d, WEMISS CM-A1 = 1bcf:28c4 (a integrada do notebook é 5986:211b)
+  usb_hardware_id: "046d:082d, 1bcf:28c4"
+
+detector:
+  model: models/face_detection_yunet_2023mar.onnx
+  input_width: 640        # o quadro é reduzido para esta largura antes da detecção
+  score_threshold: 0.75   # confiança mínima do detector de rosto
+  min_face_width: 0.12    # rosto precisa ocupar ao menos 12% da largura (ignora quem está ao fundo)
+  center_weight: 0.5      # 0 = escolhe só pelo tamanho; 1 = centralização pesa tanto quanto tamanho
+  lock_seconds: 0.6       # o candidato precisa ficar parado na frente por esse tempo para virar jogador
+  lost_seconds: 3.0       # jogador fora do quadro por mais que isso = partida reseta
+  max_jump: 0.8           # quanto o rosto pode "pular" entre quadros (em larguras de rosto)
+
+emotion:
+  model: models/enet_b0_8_va_mtl.onnx
+  device: auto            # auto (GPU se der, senão CPU) | cuda | cpu
+  crop_margin: 0.10       # margem extra em volta do rosto no recorte
+  align: true             # endireita o rosto inclinado usando os olhos
+  smoothing: 0.40         # suavização (0..1). Menor = mais estável; maior = reage mais rápido
+
+calibration:
+  seconds: 2.5            # duração da calibração do rosto neutro
+  min_frames: 15          # quadros mínimos com rosto para a calibração valer
+  max_attempts: 3         # tentativas antes de aceitar um neutro padrão (conservador)
+  max_expression: 0.45    # se feliz/surpresa/triste passar disso na calibração, pede "fique sério"
+
+# ---------------------------------------------------------------------
+#  REGRAS ANTI "VITÓRIA FÁCIL" - TODAS as condições de uma emoção
+#  precisam ser verdadeiras ao mesmo tempo, por hold_seconds E hold_frames.
+#   min_prob   : probabilidade mínima da classe (0..1)
+#   min_gain   : quanto a probabilidade subiu em relação ao neutro DA PESSOA
+#   axis       : valence (valência) ou arousal (excitação)
+#   direction  : up (precisa subir) ou down (precisa descer)
+#   axis_min   : valor mínimo do eixo, no sentido da direção
+#                (ex.: down + 0.15 => valência <= -0.15)
+#   axis_gain  : variação mínima do eixo em relação ao neutro da pessoa
+#  Use o modo debug (tecla D) para ver os valores ao vivo e calibrar.
+# ---------------------------------------------------------------------
+rules:
+  hold_seconds: 1.0
+  hold_frames: 12
+  happiness:
+    min_prob: 0.70
+    min_gain: 0.35
+    axis: valence
+    direction: up
+    axis_min: 0.30
+    axis_gain: 0.25
+  surprise:
+    min_prob: 0.60
+    min_gain: 0.35
+    axis: arousal
+    direction: up
+    axis_min: 0.35
+    axis_gain: 0.20
+  sadness:
+    min_prob: 0.50
+    min_gain: 0.30
+    axis: valence
+    direction: down
+    axis_min: 0.10
+    axis_gain: 0.15
+
+game:
+  order: [happiness, surprise, sadness]
+  match_timeout: 60       # segundos por partida (0 = sem limite)
+  victory_seconds: 5      # tempo da tela de vitória (depois vem o relatório)
+  timeout_seconds: 4      # tempo da tela "Quase!" (depois vem o relatório)
+  report_timeout: 90      # o relatório espera o botão ENTER; se ninguém apertar, volta sozinho após N s (0 = só pelo botão)
+  cooldown_seconds: 2.5   # pausa antes de travar o próximo jogador
+  between_seconds: 1.2    # pausa comemorativa entre uma emoção e outra
+
+ui:
+  fullscreen: true        # tecla F alterna
+  window_size: [1280, 720]
+  fps_limit: 60
+  title: "JOGO DAS CARETAS"
+  kicker: "FEIRA DE PROFISSÕES · UTFPR"
+  subtitle: "Reconhecimento de emoções com visão computacional"
+  victory_snapshots: true # mostra as 3 caretas na vitória (só em memória, apagadas no reset)
+  show_ai_reading: true   # mostra "a IA está vendo: FELIZ 82%" durante o jogo
+  emotion_map: true       # mapa agradável x agitado (valência x excitação) no canto da câmera
+  report: true            # relatório da IA + revisão humana ("a IA acertou?") no fim de cada partida
+
+audio:
+  enabled: true           # efeitos sonoros gerados por código (tecla M liga/desliga durante o jogo)
+  volume: 0.6             # 0..1
+
+privacy:
+  block_network: true     # bloqueia qualquer conexão de rede para fora da máquina
